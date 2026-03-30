@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ChemML — Process Optimizer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@300;400;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #0a0c0f;
+      --surface: #111418;
+      --border: #1e2530;
+      --accent: #00e5ff;
+      --accent2: #ff6b35;
+      --text: #c8d6e5;
+      --muted: #4a5568;
+      --success: #00e5a0;
+      --mono: 'Share Tech Mono', monospace;
+      --sans: 'Barlow', sans-serif;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      min-height: 100vh;
+      background-image:
+        repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(0,229,255,0.015) 40px, rgba(0,229,255,0.015) 41px),
+        repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(0,229,255,0.015) 40px, rgba(0,229,255,0.015) 41px);
+    }
+
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 1.5rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      background: rgba(0,229,255,0.02);
+    }
+
+    .logo-mark {
+      width: 36px; height: 36px;
+      border: 2px solid var(--accent);
+      display: grid;
+      place-items: center;
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--accent);
+      letter-spacing: 0.05em;
+    }
+
+    header h1 {
+      font-family: var(--mono);
+      font-size: 1rem;
+      color: var(--accent);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+    }
+
+    header span {
+      font-size: 0.75rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      font-family: var(--mono);
+    }
+
+    .status-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--success);
+      margin-left: auto;
+      box-shadow: 0 0 8px var(--success);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 3rem 2rem;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 0;
+      border: 1px solid var(--border);
+      margin-bottom: 2.5rem;
+      width: fit-content;
+    }
+
+    .tab {
+      padding: 0.75rem 2rem;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      background: transparent;
+      color: var(--muted);
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tab.active, .tab:hover {
+      background: rgba(0,229,255,0.08);
+      color: var(--accent);
+    }
+
+    .tab.active {
+      border-bottom: 2px solid var(--accent);
+    }
+
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    .panel-header {
+      margin-bottom: 2rem;
+    }
+
+    .panel-header h2 {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      color: var(--muted);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+
+    .panel-header p {
+      font-size: 1.1rem;
+      font-weight: 300;
+      color: var(--text);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    label {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--muted);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    .input-wrap {
+      position: relative;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 1rem;
+      padding: 0.75rem 1rem;
+      outline: none;
+      transition: border-color 0.2s;
+      -moz-appearance: textfield;
+    }
+
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+    input[type="number"]:focus {
+      border-color: var(--accent);
+      background: rgba(0,229,255,0.03);
+    }
+
+    .unit {
+      position: absolute;
+      right: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--muted);
+    }
+
+    .range-hint {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--muted);
+      opacity: 0.6;
+    }
+
+    button[type="submit"] {
+      background: transparent;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      padding: 0.9rem 2.5rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 0.5rem;
+    }
+
+    button[type="submit"]:hover {
+      background: var(--accent);
+      color: var(--bg);
+    }
+
+    .opt-btn {
+      border-color: var(--accent2);
+      color: var(--accent2);
+    }
+
+    .opt-btn:hover {
+      background: var(--accent2);
+      color: var(--bg);
+    }
+
+    /* Results */
+    .results {
+      margin-top: 2.5rem;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      animation: fadeIn 0.4s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .results-header {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .results-header span {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+    }
+
+    .results-header .tag {
+      background: rgba(0,229,160,0.1);
+      color: var(--success);
+      padding: 0.2rem 0.6rem;
+      font-size: 0.65rem;
+    }
+
+    .results-header .tag.orange {
+      background: rgba(255,107,53,0.1);
+      color: var(--accent2);
+    }
+
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0;
+    }
+
+    .result-item {
+      padding: 1.5rem;
+      border-right: 1px solid var(--border);
+    }
+
+    .result-item:last-child { border-right: none; }
+
+    .result-label {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--muted);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+
+    .result-value {
+      font-family: var(--mono);
+      font-size: 1.8rem;
+      color: var(--success);
+      font-weight: 400;
+    }
+
+    .result-value.orange { color: var(--accent2); }
+
+    .result-unit {
+      font-size: 0.7rem;
+      color: var(--muted);
+      margin-top: 0.25rem;
+      font-family: var(--mono);
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 2rem 0;
+    }
+
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 1rem 2rem;
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    @media (max-width: 600px) {
+      .grid { grid-template-columns: 1fr; }
+      .results-grid { grid-template-columns: 1fr; }
+      .result-item { border-right: none; border-bottom: 1px solid var(--border); }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo-mark">ML</div>
+  <div>
+    <h1>ChemML</h1>
+    <span>CHEMICAL PROCESS OPTIMIZER — v1.0</span>
+  </div>
+  <div class="status-dot"></div>
+</header>
+
+<div class="container">
+
+  <div class="tabs">
+    <button class="tab {% if mode == 'predict' or not mode %}active{% endif %}" onclick="showTab('predict')">
+      // Predict
+    </button>
+    <button class="tab {% if mode == 'optimize' %}active{% endif %}" onclick="showTab('optimize')">
+      // Optimize
+    </button>
+  </div>
+
+  <!-- PREDICT PANEL -->
+  <div class="panel {% if mode == 'predict' or not mode %}active{% endif %}" id="tab-predict">
+    <div class="panel-header">
+      <h2>// Mode: Prediction</h2>
+      <p>Enter process conditions to predict output metrics.</p>
+    </div>
+
+    <form action="/predict" method="POST">
+      <div class="grid">
+        <div class="field">
+          <label>Temperature</label>
+          <div class="input-wrap">
+            <input type="number" name="temp" step="any" placeholder="350"
+              value="{{ inputs.temp if inputs else '' }}" required/>
+            <span class="unit">°C</span>
+          </div>
+          <span class="range-hint">Range: 200 – 500</span>
+        </div>
+        <div class="field">
+          <label>Pressure</label>
+          <div class="input-wrap">
+            <input type="number" name="pressure" step="any" placeholder="5"
+              value="{{ inputs.pressure if inputs else '' }}" required/>
+            <span class="unit">bar</span>
+          </div>
+          <span class="range-hint">Range: 1 – 10</span>
+        </div>
+        <div class="field">
+          <label>Flow Rate</label>
+          <div class="input-wrap">
+            <input type="number" name="flow" step="any" placeholder="50"
+              value="{{ inputs.flow if inputs else '' }}" required/>
+            <span class="unit">L/hr</span>
+          </div>
+          <span class="range-hint">Range: 10 – 100</span>
+        </div>
+        <div class="field">
+          <label>Concentration</label>
+          <div class="input-wrap">
+            <input type="number" name="conc" step="any" placeholder="0.5"
+              value="{{ inputs.conc if inputs else '' }}" required/>
+            <span class="unit">mol/L</span>
+          </div>
+          <span class="range-hint">Range: 0.1 – 1.0</span>
+        </div>
+      </div>
+      <button type="submit">Run Prediction →</button>
+    </form>
+
+    {% if mode == 'predict' and results %}
+    <div class="results">
+      <div class="results-header">
+        <span>Predicted Outputs</span>
+        <span class="tag">✓ COMPLETE</span>
+      </div>
+      <div class="results-grid">
+        <div class="result-item">
+          <div class="result-label">Yield</div>
+          <div class="result-value">{{ results.yield }}</div>
+          <div class="result-unit">units</div>
+        </div>
+        <div class="result-item">
+          <div class="result-label">Efficiency</div>
+          <div class="result-value">{{ results.efficiency }}</div>
+          <div class="result-unit">units</div>
+        </div>
+        <div class="result-item">
+          <div class="result-label">Purity</div>
+          <div class="result-value">{{ results.purity }}</div>
+          <div class="result-unit">units</div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- OPTIMIZE PANEL -->
+  <div class="panel {% if mode == 'optimize' %}active{% endif %}" id="tab-optimize">
+    <div class="panel-header">
+      <h2>// Mode: Optimization</h2>
+      <p>Enter target outputs — the model will find the best process inputs.</p>
+    </div>
+
+    <form action="/optimize" method="POST">
+      <div class="grid">
+        <div class="field">
+          <label>Target Yield</label>
+          <div class="input-wrap">
+            <input type="number" name="target_yield" step="any" placeholder="0.85"
+              value="{{ targets.yield if targets else '' }}" required/>
+          </div>
+        </div>
+        <div class="field">
+          <label>Target Efficiency</label>
+          <div class="input-wrap">
+            <input type="number" name="target_eff" step="any" placeholder="0.90"
+              value="{{ targets.efficiency if targets else '' }}" required/>
+          </div>
+        </div>
+        <div class="field">
+          <label>Target Purity</label>
+          <div class="input-wrap">
+            <input type="number" name="target_purity" step="any" placeholder="0.95"
+              value="{{ targets.purity if targets else '' }}" required/>
+          </div>
+        </div>
+      </div>
+      <button type="submit" class="opt-btn">Find Optimal Inputs →</button>
+    </form>
+
+    {% if mode == 'optimize' and results %}
+    <div class="results">
+      <div class="results-header">
+        <span>Recommended Process Conditions</span>
+        <span class="tag orange">⚡ OPTIMIZED</span>
+      </div>
+      <div class="results-grid">
+        <div class="result-item">
+          <div class="result-label">Temperature</div>
+          <div class="result-value orange">{{ results.temp }}</div>
+          <div class="result-unit">°C</div>
+        </div>
+        <div class="result-item">
+          <div class="result-label">Pressure</div>
+          <div class="result-value orange">{{ results.pressure }}</div>
+          <div class="result-unit">bar</div>
+        </div>
+        <div class="result-item">
+          <div class="result-label">Flow Rate</div>
+          <div class="result-value orange">{{ results.flow }}</div>
+          <div class="result-unit">L/hr</div>
+        </div>
+      </div>
+      <div style="padding: 1rem 1.5rem; border-top: 1px solid var(--border);">
+        <div class="result-item" style="border: none; padding: 0;">
+          <div class="result-label">Concentration</div>
+          <div class="result-value orange">{{ results.conc }}</div>
+          <div class="result-unit">mol/L</div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<footer>
+  <span>CHEMML // RANDOM FOREST REGRESSOR</span>
+  <span>MODEL: model.pkl // OUTPUTS: YIELD · EFFICIENCY · PURITY</span>
+</footer>
+
+<script>
+  function showTab(name) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    event.target.classList.add('active');
+  }
+</script>
+
+</body>
+</html>
